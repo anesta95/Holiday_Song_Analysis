@@ -75,10 +75,10 @@ spotifyCharts200 = pd.read_csv('spotify200Chart.csv',
                                 header=None,
                                 dtype= {'Rank': 'str', 'Artist': 'str', 'Song': 'str', 'Streams':'str', 'Date': 'str'})
 
-
+# Only keeping columns I need and adding column names
 spotifyCharts200 = spotifyCharts200.iloc[:,1:5]
 spotifyCharts200.columns = ['Artist', 'Song', 'Streams', 'Date']
-
+# Cleaning up the weird b' ' at the beginning and ending of each cell data
 spotifyCharts200.iloc[:,1] = spotifyCharts200.iloc[:,1].str.replace(r"'$", '')
 spotifyCharts200.iloc[:,1] = spotifyCharts200.iloc[:,1].str.replace("b'", '')
 
@@ -93,37 +93,38 @@ spotifyCharts200.iloc[:,2] = spotifyCharts200.iloc[:,2].str.replace('b"', '')
 
 
 spotifyCharts200.iloc[:,2] = spotifyCharts200.iloc[:,2].str.replace(",", "")
-
+# Putting Streams and Date columns in right data type
 pd.to_numeric(spotifyCharts200['Streams'])
 pd.to_datetime(spotifyCharts200['Date'])
 spotifyCharts200.set_index("Date")
-
+# Subsetting for songs I want
 holidaySongs = spotifyCharts200[(spotifyCharts200.Song == "All I Want for Christmas Is You") | (spotifyCharts200.Song == "Rockin' Around The Christmas Tree") | (spotifyCharts200.Song == "Rockin' Around The Christmas Tree - Single Version") | (spotifyCharts200.Song == "Rockin' Around The Christmas Tree - Recorded at Spotify Studios NYC")].reset_index(drop = True)
-
+# Saving to my harddrive 
 with open('holidaySongsSpotifyCharts200.csv', 'a', encoding='utf-8') as f:
     holidaySongs.to_csv(f, header=True, index=False)
-
+# Reading in Billboard Hot 100 data I got from data.world website and subsetting to get columns I want
 billboardHot100 = pd.read_csv("billboardHot100.csv", header=0, dtype={"url": "str", "WeekID": "str", "Week Position": "int", "Song": "str", "Performer": "str", "SongID": "str", "Instance": "Int64", "Previous Week Position": "Int64", "Peak Position": "Int64", "Weeks on Chart": "Int64"}, parse_dates=["WeekID"])
 billboardHot100 = billboardHot100.iloc[:,1:10]
 billboardHot100 = billboardHot100.sort_values("WeekID").reset_index(drop = True)
-
+# Subsetting to get songs I want
 holidaySongsBillboard = billboardHot100[(billboardHot100.Song == "All I Want For Christmas Is You") | (billboardHot100.Song == "All I Want For Christmas Is You (SuperFestive!)") | (billboardHot100.Song == "Rockin' Around The Christmas Tree")].sort_values("WeekID").reset_index(drop = True)
 holidaySongsBillboard = holidaySongsBillboard[holidaySongsBillboard.Performer != 'Michael Buble'].reset_index(drop = True)
 
 holidaySongsBillboard.iloc[13,2:4] = ["All I Want For Christmas Is You", "Mariah Carey"]
-
+# Some quick logic to keep songs in January of the new year in the previous year's 'holiday season' and subsetting years I don't need
 holidaySongsBillboard['Holiday Season'] = holidaySongsBillboard.apply(lambda row: row.WeekID.year if row.WeekID.month > 9 else (row.WeekID.year - 1), axis = 1)
 holidaySongsBillboardNew = holidaySongsBillboard[holidaySongsBillboard['Holiday Season'] > 2000].reset_index(drop = True)
 holidaySongsBillboardNew['Date'] = holidaySongsBillboardNew.apply(lambda row: row.WeekID.strftime("%m%d"), axis = 1)
 
 holidaySongsBillboardNew['Date'] = pd.to_datetime(holidaySongsBillboardNew['Date'], format='%m%d')
 holidaySongsBillboardNew['Date'] = holidaySongsBillboardNew.apply(lambda row: row.Date.replace(row.Date.year + 1) if row.Date.month == 1 else row.Date, axis = 1)
-
+# Getting artists I want
 mariahCareyBillboard = holidaySongsBillboardNew[holidaySongsBillboardNew['Performer'] == 'Mariah Carey'].reset_index(drop = True)
 mariahCareyBillboard = mariahCareyBillboard.iloc[1:29,:]
 brendaLeeBillboard = holidaySongsBillboardNew[holidaySongsBillboardNew['Performer'] == 'Brenda Lee'].reset_index(drop = True)
 
-
+# First line plot of all of "All I Want for Christmas Is You" Billboard Hot 100 journeys since 2012
+# I set the x-axis to be all of one year (1900) so they would fit concurrently and just re-edited the labels
 fig, ax = plt.subplots(figsize=(18, 12))
 fig.suptitle('All I Want for Christmas Is You - Billboard Hot 100 Performace', fontsize=20, fontweight='bold')
 dates = mdates.date2num(mariahCareyBillboard['Date'])
@@ -147,7 +148,7 @@ sns.lineplot(x="Date",
 
 plt.show()
 plt.close()
-
+# Making the same plot but with "Rockin' Around the Christmas Tree"
 brendaLeeBillboard['Holiday Season'].nunique()
 mdates.date2num(pd.to_datetime("1901-01-04"))
 
@@ -176,7 +177,7 @@ sns.lineplot(x="Date",
 plt.show()
 plt.close()
 
-
+# This was the correct code but I thought it would be easier to just separate out the two artists first before doing this
 # holidaySongs['Date'].min()
 # holidaySongs['Date'].max()
 # holidaySongs['Date'].unique()
@@ -202,28 +203,28 @@ plt.close()
 #                                          "2018": [982784, 2421855, 5277108, 7748466, 10934091, 11796559, 11512752, 14000928, 9446967], 
 #                                          "2019": [846422, 2327214, 4360211, 2614410, np.nan, np.nan, np.nan, np.nan, np.nan]})
 
-
+# Taking only Mariah Carey and Brenda Lee from Spotify Charts top 200 streaming numbers
 mariahCareyHeatmap = holidaySongs[holidaySongs['Artist'] == 'Mariah Carey'].reset_index(drop = True)
 brendaLeeHeatmap = holidaySongs[holidaySongs['Artist'] == 'Brenda Lee'].reset_index(drop = True)
-
+# Putting in the correct data types for the Streams and Date columns
 mariahCareyHeatmap['Streams'] = pd.to_numeric(mariahCareyHeatmap['Streams'])
 mariahCareyHeatmap['Date'] = pd.to_datetime(mariahCareyHeatmap['Date'])
 brendaLeeHeatmap['Streams'] = pd.to_numeric(brendaLeeHeatmap['Streams'])
 brendaLeeHeatmap['Date'] = pd.to_datetime(brendaLeeHeatmap['Date'])
 
-
+# Setting a DateTime index so the streaming data could be split and summed into weekly groups and then dropped groups with 0 streams
 mariahCareyHeatmap = mariahCareyHeatmap.set_index(pd.DatetimeIndex(mariahCareyHeatmap['Date']))
 mariahCareyHeatmap = mariahCareyHeatmap.Streams.resample('W').sum()
 mariahCareyHeatmap = mariahCareyHeatmap[mariahCareyHeatmap != 0]
-
+# Making the numpy arrays for the Seaborn Heatmap. Seaborn Heatmaps have to be in a very specific format...
 mariahCareyHeatmap2017 = mariahCareyHeatmap[0:9].to_numpy()
 mariahCareyHeatmap2018 = mariahCareyHeatmap[9:18].to_numpy()
 mariahCareyHeatmap2019 = mariahCareyHeatmap[18:24].to_numpy()
-
+#  Putting together all the numpy array into a 2D numpy array
 mariahCareyHeatmap2019 = np.concatenate((mariahCareyHeatmap2019, [np.nan, np.nan, np.nan, np.nan, np.nan]))
 
 mariahCareyHeatmap = np.column_stack((mariahCareyHeatmap2017, mariahCareyHeatmap2018, mariahCareyHeatmap2019))
-
+# Same process but for Brenda Lee
 brendaLeeHeatmap = brendaLeeHeatmap.set_index(pd.DatetimeIndex(brendaLeeHeatmap['Date']))
 brendaLeeHeatmap = brendaLeeHeatmap.Streams.resample('W').sum()
 brendaLeeHeatmap = brendaLeeHeatmap[brendaLeeHeatmap != 0]
@@ -236,7 +237,7 @@ brendaLeeHeatmap2019 = np.concatenate((mariahCareyHeatmap2019, [np.nan, np.nan, 
 
 brendaLeeHeatmap = np.column_stack((mariahCareyHeatmap2017, mariahCareyHeatmap2018, mariahCareyHeatmap2019))
 
-
+# Making the two heatplots
 fig = plt.subplots(figsize=(18, 12))
 sns.set(font_scale=2)
 sns.heatmap(mariahCareyHeatmap, linewidths=0.5, cmap="Reds", xticklabels=['2017', '2018', '2019'], yticklabels=['Nov. Week 1', 'Nov. Week 2', 'Nov. Week 3', 'Nov. Week 4', 'Dec. Week 1', 'Dec. Week 2', 'Dec. Week 3', 'Dec. Week 4', 'Dec. Week 5'])
@@ -251,24 +252,26 @@ plt.title("Rockin' Around the Christmas Tree Weekly Spotify Streams", fontsize=2
 plt.show()
 plt.close()
 
-
+# Reading in the 'Monthly Listeners' Spotify data I got from Chartmetric for each artist
+# I only kept the full year that each artist had available data April 2018 - March 2019. Will be odd but will show seasonality
 mariahCareySpotifyMonthly = pd.read_csv("mariahCareySpotifyMonthlyListeners.csv", parse_dates=["DateTime"])
 mariahCareySpotifyMonthly = mariahCareySpotifyMonthly.iloc[:,0:2].dropna(how='any', axis=0)
 mariahCareySpotifyMonthly = mariahCareySpotifyMonthly[(mariahCareySpotifyMonthly['DateTime'] >= '2018-04-01') & (mariahCareySpotifyMonthly['DateTime'] <= '2019-03-31')].reset_index(drop = True)
+# Did the grouped summaries by Month and added in extra column so it is 'tidy'
 mariahCareySpotifyMonthly = mariahCareySpotifyMonthly.groupby(mariahCareySpotifyMonthly.DateTime.dt.month).mean().reset_index()
 mariahCareySpotifyMonthly['Artist'] = np.repeat(['Mariah Carey'], ['12'], axis=0)
-
+# Same process
 toniBraxtonSpotifyMonthly = pd.read_csv("toniBraxtonSpotifyMonthlyListeners.csv", parse_dates=["DateTime"])
 toniBraxtonSpotifyMonthly = toniBraxtonSpotifyMonthly.iloc[:,0:2].dropna(how='any', axis=0)
 toniBraxtonSpotifyMonthly = toniBraxtonSpotifyMonthly[(toniBraxtonSpotifyMonthly['DateTime'] >= '2018-04-01') & (toniBraxtonSpotifyMonthly['DateTime'] <= '2019-03-31')].reset_index(drop = True)
 toniBraxtonSpotifyMonthly = toniBraxtonSpotifyMonthly.groupby(toniBraxtonSpotifyMonthly.DateTime.dt.month).mean().reset_index()
 toniBraxtonSpotifyMonthly['Artist'] = np.repeat(['Toni Braxton'], ['12'], axis=0)
-
+# Combined the two dataframes. The issue is that I don't have a clean January to December so I manually changed the January, February, and March 2019 DateTime values so they come after December 2018
 mariahToni = pd.concat([mariahCareySpotifyMonthly, toniBraxtonSpotifyMonthly], ignore_index=True).sort_values('DateTime').reset_index(drop = True)
 mariahToni['DateTime'][0:6] = [13, 13, 14, 14, 15, 15]
 
 mariahToni = mariahToni.sort_values('DateTime').reset_index(drop = True)
-
+# Resorted and plotted
 
 fig, ax = plt.subplots(figsize=(18, 12))
 fig.suptitle("Mariah Carey vs. Toni Braxton Monthly Average Spotify Listeners", fontsize=22, fontweight='bold')
@@ -284,7 +287,7 @@ plt.xlabel('')
 plt.ylabel('')
 plt.show()
 plt.close()
-
+# Same process but for Brenda Lee and Wanda Jackson
 brendaLeeSpotifyMonthly = pd.read_csv("brendaLeeSpotifyMonthlyListeners.csv", parse_dates=["DateTime"])
 brendaLeeSpotifyMonthly = brendaLeeSpotifyMonthly.iloc[:,0:2].dropna(how='any', axis=0)
 brendaLeeSpotifyMonthly = brendaLeeSpotifyMonthly[(brendaLeeSpotifyMonthly['DateTime'] >= '2018-04-01') & (brendaLeeSpotifyMonthly['DateTime'] <= '2019-03-31')].reset_index(drop = True)
